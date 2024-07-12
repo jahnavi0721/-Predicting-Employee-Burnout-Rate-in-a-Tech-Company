@@ -1,0 +1,51 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import LabelEncoder
+from sklearn.impute import SimpleImputer
+
+# Load the data
+file_path = list(uploaded.keys())[0]  # Get the uploaded file name
+data = pd.read_excel(file_path, sheet_name='in')
+
+# Encode categorical variables
+label_encoder = LabelEncoder()
+data['Gender'] = label_encoder.fit_transform(data['Gender'])
+data['Company Type'] = label_encoder.fit_transform(data['Company Type'])
+data['WFH Setup Available'] = label_encoder.fit_transform(data['WFH Setup Available'])
+
+# Handle missing values in features
+imputer = SimpleImputer(strategy='mean')
+data['Resource Allocation'] = imputer.fit_transform(data[['Resource Allocation']])
+data['Mental Fatigue Score'] = imputer.fit_transform(data[['Mental Fatigue Score']])
+
+# Handle missing values in target variable
+data['Burn Rate'] = imputer.fit_transform(data[['Burn Rate']])
+
+# Extract features and target variable
+X = data.drop(['Employee ID', 'Date of Joining', 'Burn Rate'], axis=1)
+y = data['Burn Rate']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize the model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+
+# Train the model
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+
+print(f'Root Mean Squared Error: {rmse}')
+
+# Feature Importance
+feature_importances = pd.DataFrame(model.feature_importances_, index=X_train.columns, columns=['Importance']).sort_values('Importance', ascending=False)
+print(feature_importances)
